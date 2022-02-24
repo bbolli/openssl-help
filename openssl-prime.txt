@@ -1,0 +1,8 @@
+Usage: prime [options] [number...]
+  number Number to check for primality
+ -help         Display this summary
+ -hex          Hex output
+ -generate     Generate a prime
+ -bits +int    Size of number in bits
+ -safe         When used with -generate, generate a safe prime
+ -checks +int  Number of checks

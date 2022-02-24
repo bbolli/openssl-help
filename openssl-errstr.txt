@@ -1,0 +1,3 @@
+Usage: errstr [options] errnum...
+  errnum  Error number
+ -help  Display this summary

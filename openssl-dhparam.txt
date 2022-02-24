@@ -1,0 +1,17 @@
+Usage: dhparam [flags] [numbits]
+Valid options are:
+ -help               Display this summary
+ -in infile          Input file
+ -inform PEM|DER     Input format, DER or PEM
+ -outform PEM|DER    Output format, DER or PEM
+ -out outfile        Output file
+ -check              Check the DH parameters
+ -text               Print a text form of the DH parameters
+ -noout              Don't output any DH parameters
+ -rand val           Load the file(s) into the random number generator
+ -writerand outfile  Write random data to the specified file
+ -C                  Print C code
+ -2                  Generate parameters using 2 as the generator value
+ -5                  Generate parameters using 5 as the generator value
+ -dsaparam           Read or generate DSA parameters, convert to DH
+ -engine val         Use engine e, possibly a hardware device
