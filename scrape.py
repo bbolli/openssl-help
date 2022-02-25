@@ -17,19 +17,47 @@ class OpenSSLScraper:
             self.binary = devdir + '/apps/openssl'
             self.env = os.environ.copy()
             self.env['LD_LIBRARY_PATH'] = devdir
+            self.env['OPENSSL_CONF'] = '/dev/null'
+        version = subprocess.run(
+            [self.binary, 'version'], text=True, capture_output=True, env=self.env
+        ).stdout.split()[1].split('.')
+        if version[2][-1].isalpha():
+            patch = version[2].lstrip('0123456789')
+            version[2] = version[2].replace(patch, '')
+            self.version = tuple([int(v) for v in version] + [patch])
+        else:
+            self.version = tuple(int(v) for v in version)
+        print(f"{self.binary} version: {self.version}")
+
+    def help_cmd(self, subcmd: str = '') -> list[str]:
+        if self.version < (1, 1):
+            cmd = [self.binary, '-help']
+            if subcmd:
+                cmd.insert(1, subcmd)
+                if subcmd == 'pkeyparam':
+                    cmd[2] = '-in'  # '-help' doesn't work
+        else:
+            cmd = [self.binary, 'help']
+            if subcmd:
+                cmd.append(subcmd)
+        return cmd
 
     def ossl_stderr(self, subcmd: str = '') -> Optional[str]:
-        cmd = ['openssl', 'help']
-        if subcmd:
-            cmd.append(subcmd)
-        p = subprocess.run(cmd, text=True, capture_output=True)
-        if p.returncode:
+        text = subprocess.run(
+            self.help_cmd(subcmd), text=True, capture_output=True, env=self.env
+        ).stderr
+        if subcmd and not any(l.strip().startswith('-') for l in text.splitlines()):
             return None
-        return p.stderr.replace('\r\n', '\n')
+        return text.replace('unknown option -help\n', '') \
+            .replace('unknown option \'-help\'\n', '') \
+            .replace('\r\n', '\n')
 
     def subcommands(self, main_help: str) -> Iterator[str]:
         for l in main_help.splitlines():
-            if not l or 'commands' in l:
+            if not l or 'commands' in l \
+            or any(l.startswith(p) for p in (
+                'WARNING:', 'openssl:Error:', 'unknown option'
+            )):
                 continue
             yield from l.split()
 
