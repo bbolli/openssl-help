@@ -6,37 +6,40 @@ import subprocess
 from typing import Iterator, Optional
 
 
-def ossl_stderr(subcmd: str = '') -> Optional[str]:
-    cmd = ['openssl', 'help']
-    if subcmd:
-        cmd.append(subcmd)
-    p = subprocess.run(cmd, text=True, capture_output=True)
-    if p.returncode:
-        return None
-    return p.stderr.replace('\r\n', '\n')
+class OpenSSLScraper:
+
+    def ossl_stderr(self, subcmd: str = '') -> Optional[str]:
+        cmd = ['openssl', 'help']
+        if subcmd:
+            cmd.append(subcmd)
+        p = subprocess.run(cmd, text=True, capture_output=True)
+        if p.returncode:
+            return None
+        return p.stderr.replace('\r\n', '\n')
+
+    def subcommands(self, main_help: str) -> Iterator[str]:
+        for l in main_help.splitlines():
+            if not l or 'commands' in l:
+                continue
+            yield from l.split()
+
+    def gather_help(self) -> Iterator[tuple[str, Optional[str]]]:
+        main_help = self.ossl_stderr()
+        if main_help is None:
+            return
+        yield '', main_help
+        for subcmd in self.subcommands(main_help):
+            yield '-' + subcmd, self.ossl_stderr(subcmd)
+
+    def write_help(self) -> None:
+        for subcmd, text in self.gather_help():
+            if text is None:
+                continue
+            print(subcmd, end=' ', flush=True)
+            with open(f'openssl{subcmd}.txt', 'w') as f:
+                f.write(text)
+        print()
 
 
-def subcommands(main_help) -> Iterator[str]:
-    for l in main_help.splitlines():
-        if not l or 'commands' in l:
-            continue
-        yield from l.split()
-
-
-def gather_help() -> Iterator[tuple[str, Optional[str]]]:
-    main_help = ossl_stderr()
-    yield '', main_help
-    for subcmd in subcommands(main_help):
-        yield '-' + subcmd, ossl_stderr(subcmd)
-
-
-def write_help() -> None:
-    for subcmd, text in gather_help():
-        if text is None:
-            continue
-        print(subcmd, end=' ', flush=True)
-        with open(f'openssl{subcmd}.txt', 'w') as f:
-            f.write(text)
-    print()
-
-write_help()
+scraper = OpenSSLScraper()
+scraper.write_help()
