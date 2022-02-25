@@ -2,11 +2,21 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 from typing import Iterator, Optional
 
 
 class OpenSSLScraper:
+    def __init__(self, devdir: str = ''):
+        self.devdir = devdir
+        self.binary = 'openssl'
+        self.env = None
+        if devdir:
+            # call the binary in devdir with those libraries
+            self.binary = devdir + '/apps/openssl'
+            self.env = os.environ.copy()
+            self.env['LD_LIBRARY_PATH'] = devdir
 
     def ossl_stderr(self, subcmd: str = '') -> Optional[str]:
         cmd = ['openssl', 'help']
